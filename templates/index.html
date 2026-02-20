@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TraceX - Money Muling Detection</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Roboto:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Vis.js (Double CDN Fallback) -->
+    <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js"
+        onerror="this.onerror=null;this.src='https://unpkg.com/vis-network/standalone/umd/vis-network.min.js'"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- Tech Cursor Trail -->
+    <canvas id="cursor-trail"></canvas>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <div class="splash-content">
+            <i class="fa-solid fa-diagram-project brand-icon splash-logo"></i>
+            <h1 class="splash-title">TraceX</h1>
+            <p class="splash-subtitle">Advanced Money Muling Detection Engine</p>
+            <div class="splash-loader"></div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar glass">
+            <div class="brand">
+                <i class="fa-solid fa-diagram-project brand-icon"></i>
+                <h1 class="brand-text">TraceX</h1>
+            </div>
+
+            <div class="upload-section">
+                <h3>Load Transaction Data</h3>
+                <div class="file-drop-area" id="drop-area">
+                    <span class="file-msg">Drag & Drop CSV</span>
+                    <input class="file-input" type="file" id="csvFile" accept=".csv">
+                </div>
+                <button id="analyzeBtn" class="btn-primary" disabled>
+                    <i class="fa-solid fa-bolt"></i> Analyze Network
+                </button>
+            </div>
+
+            <div class="stats-panel hidden" id="statsPanel">
+                <h3>Analysis Stats</h3>
+                <div class="stat-item">
+                    <span class="lbl">Accounts:</span>
+                    <span class="val" id="totalAccounts">0</span>
+                </div>
+                <div class="stat-item danger">
+                    <span class="lbl">Suspicious:</span>
+                    <span class="val" id="suspiciousFlagged">0</span>
+                </div>
+                <div class="stat-item warning">
+                    <span class="lbl">Fraud Rings:</span>
+                    <span class="val" id="ringsDetected">0</span>
+                </div>
+                <div class="stat-info">
+                    <small>Processed in <span id="procTime">0</span> sec</small>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item"><span class="dot normal"></span> Normal</div>
+                    <div class="legend-item"><span class="dot suspicious"></span> Suspicious</div>
+                    <div class="legend-item"><span class="dot ring"></span> Ring Member</div>
+                </div>
+
+                <button id="downloadBtn" class="btn-secondary">
+                    <i class="fa-solid fa-download"></i> Export JSON
+                </button>
+            </div>
+
+            <div class="instructions">
+                <p><i class="fa-solid fa-circle-info"></i> Upload a CSV with:
+                    <code>from_account, to_account, amount, timestamp, type</code>
+                </p>
+            </div>
+
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-bar glass">
+                <h2>Network Visualization</h2>
+                <div class="search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="searchNode" placeholder="Search Account ID...">
+                </div>
+            </header>
+
+            <!-- Graph Area -->
+            <div class="graph-wrapper relative">
+                <div id="networkGraph" class="vis-network-container"></div>
+
+                <!-- Custom Graph Controls -->
+                <div class="graph-controls glass">
+                    <button id="zoomInBtn" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+                    <button id="zoomOutBtn" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+                    <button id="fitBtn" title="Fit Graph"><i class="fa-solid fa-compress"></i></button>
+                    <button id="fullscreenBtn" title="Full Screen Mode"><i class="fa-solid fa-expand"></i></button>
+                </div>
+
+                <div id="loader" class="loader-overlay hidden">
+                    <div class="spinner"></div>
+                    <p>Detecting Patterns...</p>
+                </div>
+                <div class="empty-state" id="emptyState">
+                    <i class="fa-solid fa-network-wired"></i>
+                    <h3>Start Analysis</h3>
+                    <p>Upload a CSV file to visualize the transaction network and detect fraud rings instantly.</p>
+                </div>
+            </div>
+
+            <!-- Bottom Panel -->
+            <section class="bottom-panel glass hidden" id="resultsPanel">
+                <div class="panel-header">
+                    <h3><i class="fa-solid fa-triangle-exclamation"></i> Detection Results</h3>
+                    <div class="tabs">
+                        <button class="tab-btn active" data-target="suspicious-view">Suspicious Accounts</button>
+                        <button class="tab-btn" data-target="rings-view">Fraud Rings</button>
+                    </div>
+                    <button class="icon-btn" id="togglePanelBtn"><i class="fa-solid fa-chevron-down"></i></button>
+                </div>
+
+                <div class="panel-body">
+                    <div id="suspicious-view" class="view-content active">
+                        <table class="data-table" id="suspiciousTable">
+                            <thead>
+                                <tr>
+                                    <th>Account ID</th>
+                                    <th>Suspicion Score</th>
+                                    <th>Patterns</th>
+                                    <th>Ring ID</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+
+                    <div id="rings-view" class="view-content">
+                        <table class="data-table" id="fraudRingsTable">
+                            <thead>
+                                <tr>
+                                    <th>Ring ID</th>
+                                    <th>Type</th>
+                                    <th>Size</th>
+                                    <th>Risk Score</th>
+                                    <th>Members</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Hover/Click Details Modal (Simplified) -->
+        <div id="nodeTooltip" class="glass-tooltip hidden">
+            <h4 id="tooltipId">ACC-001</h4>
+            <div id="tooltipContent"></div>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>
