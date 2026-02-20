@@ -10,6 +10,10 @@ Graph-based financial crime detection system that uncovers money muling rings us
 
 ## 🚀 Overview
 The Money Muling Detection Engine is a production-ready web application designed to identify financial fraud patterns, specifically money muling rings. It processes transaction data (CSV), constructs a directed graph, and applies graph theory algorithms to detect suspicious activities like Circular Routing, Smurfing, and Layered Shell Accounts.
+TEAM MEMBERS
+Mahesh Rajan MD
+Sree Akshya S
+Priya Dharshini B
 
 ## 🛠 Tech Stack
 - **Backend:** Python, Flask, NetworkX, Pandas
